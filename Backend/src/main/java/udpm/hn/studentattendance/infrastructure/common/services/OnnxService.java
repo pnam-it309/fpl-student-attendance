@@ -63,48 +63,76 @@ public class OnnxService {
     private BlockingQueue<Predictor<byte[], float[]>> arcFacePredictorPool;
     private BlockingQueue<Predictor<byte[], float[]>> detectPredictorPool;
 
-    private final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
+// Optimize POOL_SIZE for Render Free Tier (512MB)
+    private final int POOL_SIZE = 1;
+
+    public synchronized void ensureAntiSpoofModel() throws IOException, ModelNotFoundException, MalformedModelException {
+        if (antiSpoofModel == null) {
+            antiSpoofModel = ModelZoo.loadModel(buildAntiSpoofCriteria());
+            antiSpoofPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+            for (int i = 0; i < POOL_SIZE; i++) antiSpoofPredictorPool.add(antiSpoofModel.newPredictor());
+        }
+    }
+
+    public synchronized void ensureAntiSpoof2Model() throws IOException, ModelNotFoundException, MalformedModelException {
+        if (antiSpoof2Model == null) {
+            antiSpoof2Model = ModelZoo.loadModel(buildAntiSpoof2Criteria());
+            antiSpoof2PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+            for (int i = 0; i < POOL_SIZE; i++) antiSpoof2PredictorPool.add(antiSpoof2Model.newPredictor());
+        }
+    }
+
+    public synchronized void ensureAntiSpoof3Model() throws IOException, ModelNotFoundException, MalformedModelException {
+        if (antiSpoof3Model == null) {
+            antiSpoof3Model = ModelZoo.loadModel(buildAntiSpoof3Criteria());
+            antiSpoof3PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+            for (int i = 0; i < POOL_SIZE; i++) antiSpoof3PredictorPool.add(antiSpoof3Model.newPredictor());
+        }
+    }
+
+    public synchronized void ensureAntiSpoof4Model() throws IOException, ModelNotFoundException, MalformedModelException {
+        if (antiSpoof4Model == null) {
+            antiSpoof4Model = ModelZoo.loadModel(buildAntiSpoof4Criteria());
+            antiSpoof4PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+            for (int i = 0; i < POOL_SIZE; i++) antiSpoof4PredictorPool.add(antiSpoof4Model.newPredictor());
+        }
+    }
+
+    public synchronized void ensureArcFaceModel() throws IOException, ModelNotFoundException, MalformedModelException {
+        if (arcFaceModel == null) {
+            arcFaceModel = ModelZoo.loadModel(buildArcFaceCriteria());
+            arcFacePredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+            for (int i = 0; i < POOL_SIZE; i++) arcFacePredictorPool.add(arcFaceModel.newPredictor());
+        }
+    }
+
+    public synchronized void ensureDetectModel() throws IOException, ModelNotFoundException, MalformedModelException {
+        if (detectModel == null) {
+            detectModel = ModelZoo.loadModel(buildDetectCriteria());
+            detectPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+            for (int i = 0; i < POOL_SIZE; i++) detectPredictorPool.add(detectModel.newPredictor());
+        }
+    }
 
     @PostConstruct
-    public void init() throws IOException, ModelNotFoundException, MalformedModelException {
-        antiSpoofModel = ModelZoo.loadModel(buildAntiSpoofCriteria());
-        antiSpoof2Model = ModelZoo.loadModel(buildAntiSpoof2Criteria());
-        antiSpoof3Model = ModelZoo.loadModel(buildAntiSpoof3Criteria());
-        antiSpoof4Model = ModelZoo.loadModel(buildAntiSpoof4Criteria());
-        arcFaceModel = ModelZoo.loadModel(buildArcFaceCriteria());
-        detectModel = ModelZoo.loadModel(buildDetectCriteria());
-
-        antiSpoofPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
-        antiSpoof2PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
-        antiSpoof3PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
-        antiSpoof4PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
-        arcFacePredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
-        detectPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
-
-        for (int i = 0; i < POOL_SIZE; i++) {
-            antiSpoofPredictorPool.add(antiSpoofModel.newPredictor());
-            antiSpoof2PredictorPool.add(antiSpoof2Model.newPredictor());
-            antiSpoof3PredictorPool.add(antiSpoof3Model.newPredictor());
-            antiSpoof4PredictorPool.add(antiSpoof4Model.newPredictor());
-            arcFacePredictorPool.add(arcFaceModel.newPredictor());
-            detectPredictorPool.add(detectModel.newPredictor());
-        }
+    public void init() {
+        // Models will be loaded on demand (Lazy Loading) to save memory at startup
     }
 
     @PreDestroy
     public void close() {
-        antiSpoofPredictorPool.forEach(Predictor::close);
-        antiSpoof2PredictorPool.forEach(Predictor::close);
-        antiSpoof3PredictorPool.forEach(Predictor::close);
-        antiSpoof4PredictorPool.forEach(Predictor::close);
-        arcFacePredictorPool.forEach(Predictor::close);
-        detectPredictorPool.forEach(Predictor::close);
-        antiSpoofModel.close();
-        antiSpoof2Model.close();
-        antiSpoof3Model.close();
-        antiSpoof4Model.close();
-        arcFaceModel.close();
-        detectModel.close();
+        if (antiSpoofPredictorPool != null) antiSpoofPredictorPool.forEach(Predictor::close);
+        if (antiSpoof2PredictorPool != null) antiSpoof2PredictorPool.forEach(Predictor::close);
+        if (antiSpoof3PredictorPool != null) antiSpoof3PredictorPool.forEach(Predictor::close);
+        if (antiSpoof4PredictorPool != null) antiSpoof4PredictorPool.forEach(Predictor::close);
+        if (arcFacePredictorPool != null) arcFacePredictorPool.forEach(Predictor::close);
+        if (detectPredictorPool != null) detectPredictorPool.forEach(Predictor::close);
+        if (antiSpoofModel != null) antiSpoofModel.close();
+        if (antiSpoof2Model != null) antiSpoof2Model.close();
+        if (antiSpoof3Model != null) antiSpoof3Model.close();
+        if (antiSpoof4Model != null) antiSpoof4Model.close();
+        if (arcFaceModel != null) arcFaceModel.close();
+        if (detectModel != null) detectModel.close();
     }
 
     private Criteria<byte[], float[]> buildAntiSpoofCriteria() {
@@ -420,6 +448,11 @@ public class OnnxService {
     }
 
     public float antiSpoof(byte[] imgBytes) throws InterruptedException, TranslateException {
+        try {
+            ensureAntiSpoofModel();
+        } catch (Exception e) {
+            return 0.5f; // Fallback
+        }
         Predictor<byte[], float[]> predictor = antiSpoofPredictorPool.take();
         try {
             float[] result = predictor.predict(imgBytes);
@@ -430,6 +463,11 @@ public class OnnxService {
     }
 
     public float antiSpoof2(byte[] imgBytes) throws InterruptedException, TranslateException {
+        try {
+            ensureAntiSpoof2Model();
+        } catch (Exception e) {
+            return 0.5f; // Fallback
+        }
         Predictor<byte[], float[]> predictor = antiSpoof2PredictorPool.take();
         try {
             float[] result = predictor.predict(imgBytes);
@@ -441,6 +479,11 @@ public class OnnxService {
     }
 
     public float antiSpoof3(byte[] imgBytes) throws InterruptedException, TranslateException {
+        try {
+            ensureAntiSpoof3Model();
+        } catch (Exception e) {
+            return 0.5f; // Fallback
+        }
         Predictor<byte[], float[]> predictor = antiSpoof3PredictorPool.take();
         try {
             float[] result = predictor.predict(imgBytes);
@@ -452,6 +495,11 @@ public class OnnxService {
     }
 
     public float antiSpoof4(byte[] imgBytes) throws InterruptedException, TranslateException {
+        try {
+            ensureAntiSpoof4Model();
+        } catch (Exception e) {
+            return 0.5f; // Fallback
+        }
         Predictor<byte[], float[]> predictor = antiSpoof4PredictorPool.take();
         try {
             float[] result = predictor.predict(imgBytes);
@@ -462,6 +510,7 @@ public class OnnxService {
     }
 
     public byte[] detected(byte[] imgBytes) throws Exception {
+        ensureDetectModel();
         Predictor<byte[], float[]> predictor = detectPredictorPool.take();
         try {
             int shiftX = -40;
@@ -501,6 +550,7 @@ public class OnnxService {
     }
 
     public float[] getEmbedding(byte[] imgBytes) throws InterruptedException, TranslateException {
+        ensureArcFaceModel();
         Predictor<byte[], float[]> predictor = arcFacePredictorPool.take();
         try {
             return normalize(predictor.predict(imgBytes));

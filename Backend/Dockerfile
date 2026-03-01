@@ -29,7 +29,8 @@ COPY model ./model
 RUN mkdir /logs && chown 1000:1000 /logs
 
 # Cấu hình bộ nhớ và cổng
-ENV JAVA_OPTS="-Xms256m -Xmx512m -Dfile.encoding=UTF-8 -Djava.awt.headless=true"
+# Giảm Xmx xuống 256m để dành RAM cho ONNX Native Memory (off-heap)
+ENV JAVA_OPTS="-Xms128m -Xmx256m -XX:+UseSerialGC -Dfile.encoding=UTF-8 -Djava.awt.headless=true"
 ENV SERVER_PORT=8765
 
 EXPOSE 8765
