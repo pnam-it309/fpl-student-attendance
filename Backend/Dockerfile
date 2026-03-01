@@ -1,16 +1,23 @@
 # Stage 1: Build
-FROM gradle:8-jdk17-alpine AS build
+FROM gradle:8-jdk17 AS build
 WORKDIR /app
 COPY . .
 RUN chmod +x gradlew
 RUN ./gradlew build -x test --no-daemon
 
 # Stage 2: Runtime
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# Cài đặt các thư viện cần thiết cho ONNX/DJL
-RUN apk add --no-cache gcompat libstdc++ libgcc
+# Cài đặt các thư viện cần thiết cho ONNX/DJL và Graphics (AWT)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libfontconfig1 \
+    libstdc++6 \
+    libgcc-s1 \
+    libxext6 \
+    libxrender1 \
+    libxtst6 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy file jar từ stage build
 COPY --from=build /app/build/libs/*.jar app.jar
@@ -21,8 +28,8 @@ COPY model ./model
 # Tạo thư mục logs
 RUN mkdir /logs && chown 1000:1000 /logs
 
-# Cấu hình bộ nhớ và cổng (PORT là biến mặc định của Render)
-ENV JAVA_OPTS="-Xms256m -Xmx512m -Dfile.encoding=UTF-8"
+# Cấu hình bộ nhớ và cổng
+ENV JAVA_OPTS="-Xms256m -Xmx512m -Dfile.encoding=UTF-8 -Djava.awt.headless=true"
 ENV SERVER_PORT=8765
 
 EXPOSE 8765
