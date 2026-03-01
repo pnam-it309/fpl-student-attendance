@@ -550,7 +550,11 @@ public class OnnxService {
     }
 
     public float[] getEmbedding(byte[] imgBytes) throws InterruptedException, TranslateException {
-        ensureArcFaceModel();
+        try {
+            ensureArcFaceModel();
+        } catch (Exception e) {
+            return null;
+        }
         Predictor<byte[], float[]> predictor = arcFacePredictorPool.take();
         try {
             return normalize(predictor.predict(imgBytes));
