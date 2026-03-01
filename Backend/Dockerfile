@@ -21,12 +21,12 @@ COPY model ./model
 # Tạo thư mục logs
 RUN mkdir /logs && chown 1000:1000 /logs
 
-# Biến môi trường mặc định cho Java Heap
-# -Xmx512m: Giới hạn tối đa 512MB RAM (có thể tăng nếu host của bạn có nhiều RAM hơn)
+# Cấu hình bộ nhớ và cổng (PORT là biến mặc định của Render)
 ENV JAVA_OPTS="-Xms256m -Xmx512m -Dfile.encoding=UTF-8"
 ENV SERVER_PORT=8765
 
 EXPOSE 8765
 
-# Chạy với JAVA_OPTS và ưu tiên cổng từ biến PORT của Cloud nếu có
+# Chạy ứng dụng
+# Lưu ý: Các biến MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD sẽ được lấy từ Render Dashboard Environment
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT:-$SERVER_PORT} -jar app.jar"]
