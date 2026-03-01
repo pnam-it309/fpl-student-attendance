@@ -7,9 +7,6 @@ build/
 
 ### core ###
 .env
-Dockerfile
-docker-compose.yml
-.dockerignore
 app.log.*
 app.log
 

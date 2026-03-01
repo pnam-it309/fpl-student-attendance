@@ -43,9 +43,6 @@ out/
 *.log
 *.gz
 
-### Docker Compose ###
-docker-compose*.yml
-docker-compose*.yaml
 
 ### Makefile ###
 Makefile

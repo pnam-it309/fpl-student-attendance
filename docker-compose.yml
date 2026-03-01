@@ -1,0 +1,81 @@
+services:
+  # DATABASE (MySQL)
+  db:
+    image: mysql:8.4
+    container_name: fpl-attendance-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: student_attendance
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-mysql_root_pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+      - ./Frontend/mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # CACHE (Redis)
+  redis:
+    image: redis:alpine
+    container_name: fpl-attendance-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis_data:/data
+
+  # BACKEND (Spring Boot)
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: fpl-attendance-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - SERVER_PORT=8765
+      - SERVER_ALLOWED_ORIGIN=*
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=student_attendance
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-mysql_root_pass}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - APP_CONFIG_PATH_MODEL=/app/model
+      - LOG_PATH=/app/logs
+      # Lấy thêm các biến môi trường từ file .env ngoài
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - AUTHENTICATION_SECRET_KEY=${AUTHENTICATION_SECRET_KEY}
+      - MAILER_USERNAME=${MAILER_USERNAME}
+      - MAILER_PASSWORD=${MAILER_PASSWORD}
+    ports:
+      - "8765:8765"
+    volumes:
+      - ./Backend/logs:/app/logs
+      - ./Backend/model:/app/model
+
+  # FRONTEND (Nginx)
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: fpl-attendance-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  mysql_data:
+  redis_data:
