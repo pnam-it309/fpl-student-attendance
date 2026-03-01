@@ -2,6 +2,7 @@
 FROM gradle:8-jdk17-alpine AS build
 WORKDIR /app
 COPY . .
+RUN chmod +x gradlew
 RUN ./gradlew build -x test --no-daemon
 
 # Stage 2: Runtime
