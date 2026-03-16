@@ -50,13 +50,20 @@ public class SecurityConfig {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
-        String[] origins = ALLOWED_ORIGIN.split(",");
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        source.registerCorsConfiguration("/**", config.applyPermitDefaultValues());
-        config.setAllowedHeaders(Collections.singletonList("*"));
-        config.setAllowedOrigins(List.of(origins));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PUT", "OPTIONS", "PATCH", "DELETE"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        
+        if (ALLOWED_ORIGIN != null && !ALLOWED_ORIGIN.equals("*")) {
+            config.setAllowedOrigins(List.of(ALLOWED_ORIGIN.split(",")));
+            config.setAllowCredentials(true);
+        } else {
+            config.setAllowedOrigins(List.of("*"));
+            config.setAllowCredentials(false);
+        }
+        
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 
