@@ -33,6 +33,9 @@ public class RedisTemplateConfig {
     @Value("${spring.data.redis.port}")
     private String redisPort;
 
+    @Value("${spring.data.redis.url:}")
+    private String redisUrl;
+
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
 
@@ -51,13 +54,35 @@ public class RedisTemplateConfig {
                 .readFrom(ReadFrom.REPLICA_PREFERRED)
                 .build();
 
-        RedisStandaloneConfiguration serverConfig = new RedisStandaloneConfiguration(redisHost,
-                Integer.parseInt(redisPort));
+        RedisStandaloneConfiguration serverConfig;
+        if (org.springframework.util.StringUtils.hasText(redisUrl)) {
+            serverConfig = new RedisStandaloneConfiguration();
+            try {
+                String cleanUrl = redisUrl.replace("redis://", "");
+                if (cleanUrl.contains("@")) {
+                    cleanUrl = cleanUrl.split("@")[1];
+                }
+                if (cleanUrl.contains(":")) {
+                    String[] parts = cleanUrl.split(":");
+                    serverConfig.setHostName(parts[0]);
+                    serverConfig.setPort(Integer.parseInt(parts[1]));
+                } else {
+                    serverConfig.setHostName(cleanUrl);
+                    serverConfig.setPort(6379);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to parse Redis URL: " + redisUrl + ", falling back to host/port");
+                serverConfig = new RedisStandaloneConfiguration(redisHost, Integer.parseInt(redisPort));
+            }
+        } else {
+            serverConfig = new RedisStandaloneConfiguration(redisHost, Integer.parseInt(redisPort));
+        }
+
         LettuceConnectionFactory factory = new LettuceConnectionFactory(serverConfig, clientConfig);
         factory.afterPropertiesSet();
         try {
             factory.getConnection().ping();
-            logger.info("Redis connected to " + redisHost + ":" + redisPort);
+            logger.info("Redis connected to " + serverConfig.getHostName() + ":" + serverConfig.getPort());
         } catch (Exception e) {
             logger.warn("Redis connection failed: " + e.getMessage());
         }
