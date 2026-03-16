@@ -18,17 +18,12 @@ public class SessionHelper {
 
     private final HttpSession httpSession;
 
-    private static AuthUser authUser;
-
-    private static RoleConstant loginRole;
-
     public AuthUser getCurrentUser() {
         return (AuthUser) httpSession.getAttribute(SessionConstant.AUTH_USER);
     }
 
     public void setCurrentUser(AuthUser user) {
         httpSession.setAttribute(SessionConstant.AUTH_USER, user);
-        authUser = user;
     }
 
     public AuthUser buildAuthUser(UserAdmin user, Set<RoleConstant> role, String idFacility) {
@@ -70,47 +65,56 @@ public class SessionHelper {
     }
 
     public String getUserId() {
-        return authUser.getId();
+        AuthUser user = getCurrentUser();
+        return user != null ? user.getId() : null;
     }
 
     public String getUserName() {
-        return authUser.getName();
+        AuthUser user = getCurrentUser();
+        return user != null ? user.getName() : null;
     }
 
     public Set<RoleConstant> getUserRole() {
-        return authUser.getRole();
+        AuthUser user = getCurrentUser();
+        return user != null ? user.getRole() : null;
     }
 
     public String getFacilityId() {
-        return authUser.getIdFacility();
+        AuthUser user = getCurrentUser();
+        return user != null ? user.getIdFacility() : null;
     }
 
     public String getUserEmail() {
-        return authUser.getEmail();
+        AuthUser user = getCurrentUser();
+        return user != null ? user.getEmail() : null;
     }
 
     public String getUserEmailFe() {
-        return authUser.getEmailFe();
+        AuthUser user = getCurrentUser();
+        return user != null ? user.getEmailFe() : null;
     }
 
     public String getUserEmailFpt() {
-        return authUser.getEmailFpt();
+        AuthUser user = getCurrentUser();
+        return user != null ? user.getEmailFpt() : null;
     }
 
     public String getUserPicture() {
-        return authUser.getPicture();
+        AuthUser user = getCurrentUser();
+        return user != null ? user.getPicture() : null;
     }
 
     public String getUserCode() {
-        return authUser.getCode();
+        AuthUser user = getCurrentUser();
+        return user != null ? user.getCode() : null;
     }
 
     public RoleConstant getLoginRole() {
-        return loginRole;
+        return (RoleConstant) httpSession.getAttribute(SessionConstant.LOGIN_ROLE);
     }
 
     public void setLoginRole(RoleConstant role) {
-        loginRole = role;
+        httpSession.setAttribute(SessionConstant.LOGIN_ROLE, role);
     }
 
 }

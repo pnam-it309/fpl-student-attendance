@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.authentication.oauth2;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -88,7 +89,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         authorities.add(new SimpleGrantedAuthority(r.name()));
                     }
 
-                    Authentication auth = new UsernamePasswordAuthenticationToken(null, token, authorities);
+                    Authentication auth = new UsernamePasswordAuthenticationToken(email, token, authorities);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } else if (!role.isEmpty()) {
+                    // Fallback for valid token but user not found in DB (e.g., during registration)
+                    AuthUser tempUser = new AuthUser();
+                    Claims claims = jwtUtil.getClaimsFromToken(token).getBody();
+                    tempUser.setId(claims.get("id", String.class));
+                    tempUser.setEmail(email);
+                    tempUser.setName(claims.get("name", String.class));
+                    tempUser.setPicture(claims.get("picture", String.class));
+                    
+                    Set<RoleConstant> roleConstants = new HashSet<>();
+                    for (String r : role) {
+                        try {
+                            roleConstants.add(RoleConstant.valueOf(r));
+                        } catch (Exception ignored) {}
+                    }
+                    tempUser.setRole(roleConstants);
+                    sessionHelper.setCurrentUser(tempUser);
+
+                    List<GrantedAuthority> authorities = new ArrayList<>();
+                    for (String r : role) {
+                        authorities.add(new SimpleGrantedAuthority(r));
+                    }
+                    Authentication auth = new UsernamePasswordAuthenticationToken(email, token, authorities);
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
             }
