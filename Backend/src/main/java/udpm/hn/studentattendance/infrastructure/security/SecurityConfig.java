@@ -55,12 +55,12 @@ public class SecurityConfig {
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         
-        if (ALLOWED_ORIGIN != null && !ALLOWED_ORIGIN.equals("*")) {
+        if (ALLOWED_ORIGIN != null && !ALLOWED_ORIGIN.equals("*") && !ALLOWED_ORIGIN.isEmpty()) {
             config.setAllowedOrigins(List.of(ALLOWED_ORIGIN.split(",")));
             config.setAllowCredentials(true);
         } else {
-            config.setAllowedOrigins(List.of("*"));
-            config.setAllowCredentials(false);
+            config.addAllowedOriginPattern("*");
+            config.setAllowCredentials(true);
         }
         
         source.registerCorsConfiguration("/**", config);
@@ -91,6 +91,7 @@ public class SecurityConfig {
         excelSecurityConfig.configure(http);
 
         http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(RoutesConstant.API_PREFIX + "/**").authenticated()
                 .anyRequest().permitAll());
         return http.build();
